@@ -1,0 +1,19 @@
+# RStudio files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Temporary files
+.DS_Store
+*.tmp
+
+# Logs
+*.log
+
+# Packrat (if used)
+packrat/
+
+# Output folders
+/data/
+/results/
