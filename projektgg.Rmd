@@ -1,0 +1,296 @@
+---
+title: "Cheese Dataset Analysis"
+---
+Authors:
+Kamila Jasińska
+Jan Gwara
+
+The dataset used for analysis: cheese.csv.
+
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Load necessary libraries:
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(gganimate)
+library(nycflights13)
+library(transformr)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+Load the dataset:
+
+```{r}
+cheese_data <- read.csv("C:/zadanka_studia/GG/cheese.csv")
+```
+
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+Overview display: 
+```{r}
+glimpse(cheese_data)
+```
+Count missing values per column:
+
+```{r}
+cheese_data %>% summarise(across(everything(), ~sum(is.na(.))))
+
+```
+
+Distribution of cheeses by country:
+
+```{r}
+cheese_by_country <- cheese_data %>% 
+  count(country, sort = TRUE)
+print(cheese_by_country)
+```
+
+Filter cheeses made from cow's milk:
+
+```{r}
+cow_milk_cheese <- cheese_data %>% 
+  filter(milk == "cow")
+print(cow_milk_cheese)
+```
+
+Vegetarian cheeses proprtion:
+
+```{r}
+vegetarian_proportion <- cheese_data %>% 
+  summarise(vegetarian_percentage = mean(vegetarian, na.rm = TRUE))
+
+print(vegetarian_proportion)
+```
+Top 5 cheese types by frequency:
+
+```{r}
+top_types <- cheese_data %>% 
+  count(type, sort = TRUE) %>% 
+  slice_max(n, n = 5)
+print(top_types)
+```
+Count unique textures:
+
+```{r}
+unique_textures <- cheese_data %>% 
+  separate_rows(texture, sep = ", ") %>% 
+  distinct(texture) %>% count()
+print(unique_textures)
+```
+Explore the distribution of flavours:
+
+```{r}
+flavor_distribution <- cheese_data %>% 
+  separate_rows(flavor, sep = ", ") %>% 
+  count(flavor, sort = TRUE)
+print(flavor_distribution)
+```
+
+Explore cheeses by region:
+
+```{r}
+cheese_by_region <- cheese_data %>% 
+  filter(!is.na(region)) %>% 
+  count(region, sort = TRUE)
+print(cheese_by_region)
+```
+
+Average fat content:
+```{r}
+average_fat_content <- cheese_data %>% 
+  filter(!is.na(fat_content)) %>% 
+  summarise(avg_fat = mean(as.numeric(gsub("%", "", fat_content)), na.rm = TRUE))
+print(average_fat_content)
+```
+VISUALISATION
+
+1. Pie chart of vegetarian vs non-vegetarian cheeses
+```{r}
+ vegetarian_count <- cheese_data %>% 
+  mutate(vegetarian = ifelse(vegetarian == "True", "Vegetarian", "Non-Vegetarian")) %>% 
+  count(vegetarian)
+ggplot(vegetarian_count, aes(x = "", y = n, fill = vegetarian)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y") +
+  labs(title = "Proportion of Vegetarian Cheeses")
+```
+2. Histogram of fat content
+```{r}
+cheese_data %>% 
+  filter(!is.na(fat_content)) %>% 
+  ggplot(aes(x = as.numeric(gsub("%", "", fat_content)))) +
+  geom_histogram(binwidth = 5, fill = "orange", color = "black") +
+  labs(title = "Distribution of Fat Content", x = "Fat Content (%)", y = "Frequency")
+```
+3. Bar plot of cheese types
+```{r}
+ggplot(top_types, aes(x = reorder(type, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  labs(title = "Top 5 Cheese Types", x = "Cheese Type", y = "Count")
+```
+4. Frequency of textures (bar plot)
+```{r}
+texture_count <- cheese_data %>% 
+  separate_rows(texture, sep = ", ") %>% 
+  count(texture, sort = TRUE)
+ggplot(texture_count, aes(x = reorder(texture, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "coral") +
+  coord_flip() +
+  labs(title = "Frequency of Cheese Textures", x = "Texture", y = "Count")
+```
+5. Line plot of number of cheeses over time
+```{r}
+cheese_data %>% 
+  mutate(year = sample(2000:2020, nrow(cheese_data), replace = TRUE)) %>% 
+  count(year) %>% 
+  ggplot(aes(x = year, y = n)) +
+  geom_line(color = "darkred") +
+  labs(title = "Number of Cheeses Over Time", x = "Year", y = "Number of Cheeses")
+```
+6. Boxplot of vegetarian vs non-vegetarian cheeses and fat content
+
+```{r}
+cheese_data %>% 
+  filter(!is.na(fat_content)) %>% 
+  ggplot(aes(x = vegetarian, y = as.numeric(gsub("%", "", fat_content)), fill = vegetarian)) +
+  geom_boxplot() +
+  labs(title = "Vegetarian vs Non-Vegetarian Cheeses and Fat Content", x = "Vegetarian", y = "Fat Content (%)")
+```
+7. Bar plot of cheese production by milk type
+```{r}
+cheese_data %>% 
+  count(milk, sort = TRUE) %>% 
+  ggplot(aes(x = reorder(milk, -n), y = n, fill = milk)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Cheese Production by Milk Type", x = "Milk Type", y = "Number of Cheeses")
+
+```
+8. Density plot of fat content
+```{r}
+cheese_data %>% 
+  filter(!is.na(fat_content)) %>% 
+  ggplot(aes(x = as.numeric(gsub("%", "", fat_content)), fill = "Fat Content")) +
+  geom_density(alpha = 0.5, color = "darkblue") +
+  labs(title = "Density of Fat Content", x = "Fat Content (%)", y = "Density")
+```
+9.Average Fat Content by Country
+```{r}
+average_fat_by_country <- cheese_data %>%
+  filter(!is.na(fat_content)) %>%
+  group_by(country) %>%
+  summarise(avg_fat = mean(as.numeric(gsub("%", "", fat_content)), na.rm = TRUE)) %>%
+  arrange(desc(avg_fat))
+
+ggplot(average_fat_by_country, aes(x = reorder(country, -avg_fat), y = avg_fat)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Average Fat Content by Country", x = "Country", y = "Average Fat Content (%)")
+
+```
+10. Cheese Production by Texture
+```{r}
+texture_distribution <- cheese_data %>%
+  separate_rows(texture, sep = ", ") %>%
+  count(texture, sort = TRUE)
+
+ggplot(texture_distribution, aes(x = reorder(texture, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "darkorange") +
+  coord_flip() +
+  labs(title = "Cheese Production by Texture", x = "Texture", y = "Count")
+
+```
+11. Flavor and Fat Content Analysis
+```{r}
+flavor_fat_content <- cheese_data %>%
+  filter(!is.na(fat_content)) %>%
+  separate_rows(flavor, sep = ", ") %>%
+  group_by(flavor) %>%
+  summarise(
+    avg_fat_content = mean(as.numeric(gsub("%", "", fat_content)), na.rm = TRUE),
+    cheese_count = n()
+  ) %>%
+  filter(cheese_count > 2) %>%
+  arrange(desc(avg_fat_content))
+
+ggplot(flavor_fat_content, aes(x = reorder(flavor, -avg_fat_content), y = avg_fat_content)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  coord_flip() +
+  labs(title = "Average Fat Content by Flavor", x = "Flavor", y = "Average Fat Content (%)")
+
+```
+12. Scatter Plot of Fat Content vs Cheese Count by Country
+```{r}
+fat_content_by_country <- cheese_data %>%
+  filter(!is.na(fat_content)) %>%
+  group_by(country) %>%
+  summarise(
+    avg_fat_content = mean(as.numeric(gsub("%", "", fat_content)), na.rm = TRUE),
+    cheese_count = n()
+  )
+
+ggplot(fat_content_by_country, aes(x = cheese_count, y = avg_fat_content)) +
+  geom_point(size = 3, color = "darkgreen") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Scatter Plot of Fat Content vs Cheese Count by Country", x = "Cheese Count", y = "Average Fat Content (%)")
+
+```
+13. Top 10 Countries with the Most Cheeses
+```{r}
+top_countries <- cheese_data %>%
+  count(country, sort = TRUE) %>%
+  slice_max(n, n = 10)
+
+ggplot(top_countries, aes(x = reorder(country, n), y = n, fill = country)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 10 Countries with the Most Cheeses", x = "Country", y = "Number of Cheeses")
+
+
+```
+14.Proportion of Unique Textures
+```{r}
+texture_data <- cheese_data %>%
+  separate_rows(texture, sep = ", ") %>%
+  count(texture, sort = TRUE)
+
+ggplot(texture_data, aes(x = reorder(texture, -n), y = n)) +
+  geom_bar(stat = "identity", fill = "darkorange") +
+  coord_flip() +
+  labs(title = "Proportion of Unique Textures", x = "Texture", y = "Count")
+
+```
+15. Lollipop Chart - Average Flavor Profile Length by Cheese Type
+```{r}
+cheese_flavor <- cheese_data %>%
+  group_by(type) %>%
+  summarise(avg_length = mean(nchar(flavor), na.rm = TRUE))
+
+ggplot(cheese_flavor, aes(x = reorder(type, avg_length), y = avg_length)) +
+  geom_segment(aes(xend = reorder(type, avg_length), yend = 0), color = "grey") +
+  geom_point(size = 4, color = "orange") +
+  coord_flip() +
+  labs(title = "Average Flavor Profile Length by Cheese Type", x = "Cheese Type", y = "Average Flavor Length") +
+  theme_minimal()
+
+```
+16. 
+
+```{r}
+ggplot(cheese_data, aes(x = fat_content, y = milk_type, fill = milk_type)) +
+  geom_density_ridges(alpha = 0.7) +
+  labs(title = "Fat Content Distribution by Milk Type", x = "Fat Content (%)", y = "Milk Type") +
+  theme_ridges() +
+  scale_fill_viridis_d()
+```
+
+
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
