@@ -28,7 +28,7 @@ Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by press
 Load the dataset:
 
 ```{r}
-cheese_data <- read.csv("C:/zadanka_studia/GG/cheese.csv")
+cheese_data <- read.csv("cheese.csv")
 ```
 
 
